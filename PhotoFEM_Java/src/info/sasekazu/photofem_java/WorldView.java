@@ -23,7 +23,6 @@ public class WorldView extends JPanel {
 	
 	private float[][] vtx;
 	private int[][] idx;
-	public int[][][] edges;
 
 	
 	public WorldView(){
