@@ -132,12 +132,12 @@ public class Main extends JFrame {
 	class meshActionAdapter implements ActionListener{
 		public void actionPerformed(ActionEvent e){
 			stateManager.setState(State.GENERATE_MESH);
-//			TriangleMeshBuilder meshBuilder = new TriangleMeshBuilder((float)(wv.getOutline().getMinlen()*1.3));
-//			meshBuilder.setOutline(outline);
-//			wv.setVertices(meshBuilder.getVertices());
-//			wv.setIndices(meshBuilder.getIndices());
-//			stateManager.setState(State.CALC_PHYSICS);
-//			wv.reflesh();
+			TriangleMeshBuilder meshBuilder = new TriangleMeshBuilder((float)(wv.getOutline().getMinlen()*1.3));
+			meshBuilder.setOutline(outline);
+			wv.setVertices(meshBuilder.getVertices());
+			wv.setIndices(meshBuilder.getIndices());
+			stateManager.setState(State.CALC_PHYSICS);
+			wv.reflesh();
 		}
 	}
 	
