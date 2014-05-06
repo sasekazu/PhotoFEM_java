@@ -12,12 +12,19 @@ package info.sasekazu.photofem_java;
 import java.util.ArrayList;
 
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.LinearRing;
+import com.vividsolutions.jts.geom.Point;
+import com.vividsolutions.jts.geom.util.LinearComponentExtracter;
 
 public class Outline {
 
 	private ArrayList<ClosedCurve> cc;	
 	private float minlen;	// Minimum distance between each vertex
+	private Geometry polygon;
 	
 	public Outline(float minlen) {
 		this.minlen = minlen;
@@ -38,8 +45,31 @@ public class Outline {
 	// it is only when current ClosedCurve is closed.
 	public boolean newClosedCurve(){
 		if(isLastCurveClosed()){
+			// check intersection against others
+			for(int i=0; i<cc.size()-1; i++){
+				if(cc.get(i).getLinearRing().intersects(cc.get(cc.size()-1).getLinearRing())){
+					cc.remove(cc.size()-1);
+					break;
+				}
+			}
+			// check self intersection
+			if(!cc.get(cc.size()-1).getLinearRing().isRing()){
+				cc.remove(cc.size()-1);
+			}
+			
 			cc.add(new ClosedCurve(this.minlen));
+			
+			// update polygon
+			polygon = new GeometryFactory().createPolygon(cc.get(0).getLinearRing());
+			if(cc.size()>1){
+				Geometry plTar;
+				for(int i=1; i<cc.size()-1; i++){
+					plTar = new GeometryFactory().createPolygon(cc.get(i).getLinearRing());
+					polygon = polygon.symDifference(plTar);
+				}
+			}
 			return true;
+			
 		}else{
 			return false;
 		}
@@ -104,5 +134,60 @@ public class Outline {
 		}
 		return tmp;
 	}
+	
+	
+	public GeometryCollection getLineGeometries(){
+		ArrayList<LineString> linesList = new ArrayList<LineString>();
+		for(int i=0; i<cc.size()-1; i++){
+			LinearComponentExtracter.getLines(cc.get(i).getLinearRing(), linesList, true);
+		}
+		return new GeometryFactory().createGeometryCollection(linesList.toArray(new LineString[linesList.size()]));
+	}
+
+	public Geometry getPolygon() {
+		return polygon;
+	}
+
+	// return collection of Point
+	// which is within the input outline.
+	// Points which the distance between the outline is 
+	// under threshold are not included.
+	public GeometryCollection getInnerPoints(float dx, float dy){
+		double maxx = polygon.getEnvelopeInternal().getMaxX();
+		double minx = polygon.getEnvelopeInternal().getMinX();
+		double maxy = polygon.getEnvelopeInternal().getMaxY();
+		double miny = polygon.getEnvelopeInternal().getMinY();
+		
+		ArrayList<Point> ptList = new ArrayList<Point>();
+		int divx = (int)((maxx-minx)/dx)+2;
+		int divy = (int)((maxy-miny)/dy)+2;
+		Point pt;
+		double threshold = minlen;
+		boolean tooNearFlag;
+		for(int i=0; i<divx; i++){
+			for(int j=0; j<divy; j++){
+				// generate grid points from bounding box
+				pt = new GeometryFactory().createPoint(new Coordinate(minx+dx*i, miny+dy*j));
+				// check whether the point is within the outline
+				if(!polygon.contains(pt)){
+					continue;
+				}
+				// check distance
+				tooNearFlag = false;
+				for(int k=0; k<cc.size()-1; k++){
+					if(cc.get(k).getLinearRing().distance(pt)<threshold){
+						tooNearFlag = true;
+						break;
+					}
+				}
+				// add point which passes all conditions
+				if(!tooNearFlag){
+					ptList.add(pt);
+				}
+			}
+		}
+		return new GeometryFactory().createGeometryCollection(ptList.toArray(new Point[ptList.size()]));
+	}
+	
 
 }

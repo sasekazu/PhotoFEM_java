@@ -21,8 +21,9 @@ public class WorldView extends JPanel {
 	private StateManager stateManager;
 	private Outline outline;
 	
-	private float[] vtx;
-	private int[] idx;
+	private float[][] vtx;
+	private int[][] idx;
+	public int[][][] edges;
 
 	
 	public WorldView(){
@@ -52,18 +53,21 @@ public class WorldView extends JPanel {
 				}
 			}
 			// Draw lines
-			path.reset();
 			for(int i=0; i<outline.closedCurveNum(); i++){
+				path.reset();
 				if(outline.coodNum(i)>0){
 					path.moveTo((float)outline.get(i, 0).x, (float)outline.get(i, 0).y);
 					for(int j=1; j<outline.coodNum(i); j++){
 						path.lineTo((float)outline.get(i, j).x, (float)outline.get(i, j).y);
 					}
 				}
+				if(i==outline.closedCurveNum()-1){
+					g2.setStroke(new BasicStroke(1.0f));
+				}else{
+					g2.setStroke(new BasicStroke(3.0f));
+				}
+			    g2.draw(path);
 			}
-			g2.setStroke(new BasicStroke(2.0f));
-		    g2.draw(path);
-			g2.setStroke(new BasicStroke(1.0f));
 		}
 		// GENERATE_MESH
 		else if(state == StateManager.State.GENERATE_MESH){
@@ -72,24 +76,21 @@ public class WorldView extends JPanel {
 		else if(state == StateManager.State.CALC_PHYSICS){
 			
 			// Draw vertices
-			int vertnum = vtx.length/3;
+			int vertnum = vtx.length;
 			int cr = 3; int cR = 2*cr;
 			for(int i=0; i<vertnum; i++){
-				g2.fillOval((int)vtx[3*i+0]-cr,  (int)vtx[3*i+1]-cr, cR, cR);
+				g2.fillOval((int)vtx[i][0]-cr,  (int)vtx[i][1]-cr, cR, cR);
 			}
-			
+
 			// Draw triangles
-			int trinum = idx.length/3;
 			path.reset();
-			for(int i=0; i<trinum; i++){
-				path.moveTo(vtx[3*idx[3*i+0]+0], vtx[3*idx[3*i+0]+1]);
-				path.lineTo(vtx[3*idx[3*i+1]+0], vtx[3*idx[3*i+1]+1]);
-				path.lineTo(vtx[3*idx[3*i+2]+0], vtx[3*idx[3*i+2]+1]);
-				path.lineTo(vtx[3*idx[3*i+0]+0], vtx[3*idx[3*i+0]+1]);
+			for(int i=0; i<idx.length; i++){
+				path.moveTo(vtx[idx[i][0]][0], vtx[idx[i][0]][1]);
+				path.lineTo(vtx[idx[i][1]][0], vtx[idx[i][1]][1]);
+				path.lineTo(vtx[idx[i][2]][0], vtx[idx[i][2]][1]);
+				path.lineTo(vtx[idx[i][0]][0], vtx[idx[i][0]][1]);
 			}
-			g2.setStroke(new BasicStroke(2.0f));
 		    g2.draw(path);
-			g2.setStroke(new BasicStroke(1.0f));
 			
 		}
 		
@@ -123,11 +124,11 @@ public class WorldView extends JPanel {
 		this.stateInitFlag = true;	// now onDraw() goes actual draw phase
 	}
 	
-	public void setVertices(float vert[]){
+	public void setVertices(float vert[][]){
 		vtx = vert.clone();
 	}
 	
-	public void setIndices(int indices[]){
+	public void setIndices(int indices[][]){
 		this.idx = indices.clone();
 	}
 	

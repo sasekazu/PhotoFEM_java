@@ -22,7 +22,7 @@ public class Main extends JFrame {
 
 	private static final long serialVersionUID = -1623952337148823353L;
 	StateManager stateManager;
-	private Outline outline = new Outline(40);
+	private Outline outline = new Outline(10);
 
 	// UI components
 	JButton resetButton;
@@ -133,7 +133,7 @@ public class Main extends JFrame {
 		public void actionPerformed(ActionEvent e){
 			stateManager.setState(State.GENERATE_MESH);
 			TriangleMeshBuilder meshBuilder = new TriangleMeshBuilder((float)(wv.getOutline().getMinlen()*1.3));
-			meshBuilder.setOutline(outline);
+			meshBuilder.buildMesh(outline);
 			wv.setVertices(meshBuilder.getVertices());
 			wv.setIndices(meshBuilder.getIndices());
 			stateManager.setState(State.CALC_PHYSICS);
