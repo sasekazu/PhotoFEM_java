@@ -23,6 +23,7 @@ public class Main extends JFrame {
 	private static final long serialVersionUID = -1623952337148823353L;
 	StateManager stateManager;
 	private Outline outline = new Outline(10);
+	private FEM fem;
 
 	// UI components
 	JButton resetButton;
@@ -138,6 +139,8 @@ public class Main extends JFrame {
 			wv.setIndices(meshBuilder.getIndices());
 			stateManager.setState(State.CALC_PHYSICS);
 			wv.reflesh();
+			// make fem
+			fem = new FEM(meshBuilder.getVertices(), meshBuilder.getIndices(), 1000.0f, 0.4f, 1.0f, 0.01f);
 		}
 	}
 	
