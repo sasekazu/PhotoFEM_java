@@ -140,7 +140,7 @@ public class Main extends JFrame {
 			stateManager.setState(State.CALC_PHYSICS);
 			wv.reflesh();
 			// make fem
-			fem = new FEM(meshBuilder.getVertices(), meshBuilder.getIndices(), 1000.0f, 0.4f, 1.0f, 0.01f);
+			fem = new FEM(meshBuilder.getVertices(), meshBuilder.getIndices(), 1000.0, 0.4, 1.0, 0.01);
 		}
 	}
 	
