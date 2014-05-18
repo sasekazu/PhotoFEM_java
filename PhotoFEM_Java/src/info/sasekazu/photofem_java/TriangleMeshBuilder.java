@@ -33,6 +33,22 @@ public class TriangleMeshBuilder {
 		MultiLineString mls = (MultiLineString)cdtb.getEdges(new GeometryFactory());
 		// get vtx
 		Coordinate[] coords = mls.getCoordinates();
+		ArrayList<Coordinate> coordList = new ArrayList<Coordinate>();
+		boolean coordDupFlag;
+		for(int i=0; i<coords.length; ++i){
+			coordDupFlag = false;
+			for(int j=0; j<coordList.size(); ++j){
+				if(coordList.get(j).equals(coords[i])){
+					coordDupFlag = true;
+					break;
+				}
+			}
+			if(!coordDupFlag){
+				coordList.add(coords[i]);
+			}
+		}
+		coords = coordList.toArray(new Coordinate[coordList.size()]);
+		
 		vtx = new float[coords.length][2];
 		for(int i=0; i<coords.length; i++){
 			vtx[i][0] = (float)coords[i].x;
@@ -62,17 +78,16 @@ public class TriangleMeshBuilder {
 			}
 		}
 		idx = idxList.toArray(new int[idxList.size()][3]);
-		
 	}
 
 	// getter
 	
 	public float[][] getVertices() {
-		return vtx;
+		return vtx.clone();
 	}
 
 	public int[][] getIndices() {
-		return idx;
+		return idx.clone();
 	}
 	
 

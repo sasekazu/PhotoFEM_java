@@ -22,17 +22,18 @@ public class Main extends JFrame {
 
 	private static final long serialVersionUID = -1623952337148823353L;
 	StateManager stateManager;
-	private Outline outline = new Outline(10);
+	private Outline outline = new Outline(30);
 	private FEM fem;
 
 	// UI components
 	JButton resetButton;
 	JButton meshButton;
+	JButton dispButton;
 	JLabel message;
 	WorldView wv;
 	
 	public Main(){
-		this.setSize(700,600);
+		this.setSize(1000,1000);
 		this.setTitle("FEM");
 		
 
@@ -45,6 +46,11 @@ public class Main extends JFrame {
 		meshButton = new JButton();
 		meshButton.setText("Mesh");
 		meshButton.addActionListener(new meshActionAdapter());
+		
+		// Disp button
+		dispButton = new JButton();
+		dispButton.setText("Disp");
+		dispButton.addActionListener(new dispActionAdapter());
 		
 		// Message box
 		message = new JLabel();
@@ -80,6 +86,7 @@ public class Main extends JFrame {
 				.addGroup(layout.createSequentialGroup()
 						.addComponent(resetButton)
 						.addComponent(meshButton)
+						.addComponent(dispButton)
 						)
 				.addComponent(message)
 				.addComponent(wv));
@@ -90,6 +97,7 @@ public class Main extends JFrame {
 		vGroup.addGroup(layout.createParallelGroup()
 				.addComponent(resetButton)
 				.addComponent(meshButton)
+				.addComponent(dispButton)
 				)
 				.addComponent(message)
 				.addComponent(wv);
@@ -141,6 +149,23 @@ public class Main extends JFrame {
 			wv.reflesh();
 			// make fem
 			fem = new FEM(meshBuilder.getVertices(), meshBuilder.getIndices(), 1000.0, 0.4, 1.0, 0.01);
+			fem.setBoundary(0);
+			fem.calcDeformation();
+			wv.setVertices(fem.getPos());
+			wv.reflesh();
+		}
+	}
+	
+	class dispActionAdapter implements ActionListener{
+		float disp = 0;
+		public void actionPerformed(ActionEvent e){
+			// make fem
+			disp += 1;
+			System.out.println("disp " + disp);
+			fem.setBoundary(disp);
+			fem.calcDeformation();
+			wv.setVertices(fem.getPos());
+			wv.reflesh();
 		}
 	}
 	

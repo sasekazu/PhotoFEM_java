@@ -95,8 +95,8 @@ public class FEM {
 		fd = factory.createConstantVector(nd, 0);
 		ff = factory.createConstantVector(nf, 0);
 		
+		// matrices
 		makeK();
-		Kff = K.copy();
 	}
 	
 	
@@ -114,18 +114,18 @@ public class FEM {
 		Be = new Matrix[ntri];
 		Ke = new Matrix[ntri];
 		mass = factory.createConstantVector(npos, 0);
-		double[] p1 = new double[3];
-		double[] p2 = new double[3];
-		double[] p3 = new double[3];
+		double[] p1 = new double[2];
+		double[] p2 = new double[2];
+		double[] p3 = new double[2];
 		double[][] mat = new double[3][3];
 		double[][] be = new double[3][6];
 		Matrix pmat;
 		double delta, dd, area;
 		for(int i=0; i<ntri; ++i){
 			// prepare ..
-			p1[0] = 1.0; p1[1] = pos[tri[1][0]][0]; p1[2] = pos[tri[i][0]][1];
-			p2[0] = 1.0; p2[1] = pos[tri[1][1]][0]; p2[2] = pos[tri[i][1]][1];
-			p3[0] = 1.0; p3[1] = pos[tri[1][2]][0]; p3[2] = pos[tri[i][2]][1];
+			p1[0] = pos[tri[1][0]][0]; p1[1] = pos[tri[i][0]][1];
+			p2[0] = pos[tri[1][1]][0]; p2[1] = pos[tri[i][1]][1];
+			p3[0] = pos[tri[1][2]][0]; p3[1] = pos[tri[i][2]][1];
 			mat[0][0] = 1.0; mat[0][1] = p1[0]; mat[0][2] = p1[1];
 			mat[1][0] = 1.0; mat[1][1] = p2[0]; mat[1][2] = p2[1];
 			mat[2][0] = 1.0; mat[2][1] = p3[0]; mat[2][2] = p3[1];
@@ -181,8 +181,8 @@ public class FEM {
 	}
 	
 	void setBoundary(double disp){
-		double yup = 100.0;
-		double ybt = 10.0;
+		double yup = 300.0;
+		double ybt = 100.0;
 		// u, f, nodeToDF
 		NodeProp[] nodeToDF = new NodeProp[npos];
 		u = factory.createConstantVector(2*npos, 0);
@@ -224,33 +224,41 @@ public class FEM {
 	}
 	
 	public void calcDeformation(){
+		
+		
 		// divide matrices
-		Kff = factory.createConstantMatrix(flist.size(), flist.size(), 0);
+		Kff = factory.createConstantMatrix(2*flist.size(), 2*flist.size(), 0);
+		double kffbuf;
 		for(int i=0; i<flist.size(); ++i){
 			for(int j=0; j<flist.size(); ++j){
 				for(int k=0; k<2; ++k){
 					for(int l=0; l<2; ++l){
-						Kff.set(2*i+k, 2*j+l, K.get(2*flist.get(i)+k, 2*flist.get(j)+l));
+						kffbuf = Kff.get(2*i+k, 2*j+l);
+						Kff.set(2*i+k, 2*j+l, kffbuf + K.get(2*flist.get(i)+k, 2*flist.get(j)+l));
 					}
 				}
 			}
 		}
-		Kfd = factory.createConstantMatrix(flist.size(), dlist.size(), 0);
+		Kfd = factory.createConstantMatrix(2*flist.size(), 2*dlist.size(), 0);
+		double kfdbuf;
 		for(int i=0; i<flist.size(); ++i){
 			for(int j=0; j<dlist.size(); ++j){
 				for(int k=0; k<2; ++k){
 					for(int l=0; l<2; ++l){
-						Kfd.set(2*i+k, 2*j+l, K.get(2*flist.get(i)+k, 2*dlist.get(j)+l));
+						kfdbuf = Kfd.get(2*i+k, 2*j+l);
+						Kfd.set(2*i+k, 2*j+l, kfdbuf + K.get(2*flist.get(i)+k, 2*dlist.get(j)+l));
 					}
 				}
 			}
 		}
-		Kdd = factory.createConstantMatrix(dlist.size(), dlist.size(), 0);
+		Kdd = factory.createConstantMatrix(2*dlist.size(), 2*dlist.size(), 0);
+		double kddbuf;
 		for(int i=0; i<dlist.size(); ++i){
 			for(int j=0; j<dlist.size(); ++j){
 				for(int k=0; k<2; ++k){
 					for(int l=0; l<2; ++l){
-						Kdd.set(2*i+k, 2*j+l, K.get(2*dlist.get(i)+k, 2*dlist.get(j)+l));
+						kddbuf = Kdd.get(2*i+k, 2*j+l);
+						Kdd.set(2*i+k, 2*j+l, kddbuf + K.get(2*dlist.get(i)+k, 2*dlist.get(j)+l));
 					}
 				}
 			}
