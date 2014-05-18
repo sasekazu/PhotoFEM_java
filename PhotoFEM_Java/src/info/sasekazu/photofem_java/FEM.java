@@ -2,7 +2,9 @@ package info.sasekazu.photofem_java;
 
 import java.util.ArrayList;
 
+import org.la4j.LinearAlgebra;
 import org.la4j.factory.Basic1DFactory;
+import org.la4j.linear.LinearSystemSolver;
 import org.la4j.matrix.Matrix;
 import org.la4j.matrix.dense.Basic1DMatrix;
 import org.la4j.vector.Vector;
@@ -49,6 +51,9 @@ public class FEM {
 	
 	// Matrix factory
 	Basic1DFactory factory = new Basic1DFactory();
+	
+	// other
+	enum NodeProp {DispKnown, ForceKnown};
 	
 	public FEM(float[][] vertexf, int[][] index, double young, double poisson, double density, double thickness){
 
@@ -174,5 +179,114 @@ public class FEM {
 			}
 		}
 	}
-
+	
+	void setBoundary(double disp){
+		double yup = 100.0;
+		double ybt = 10.0;
+		// u, f, nodeToDF
+		NodeProp[] nodeToDF = new NodeProp[npos];
+		u = factory.createConstantVector(2*npos, 0);
+		f = factory.createConstantVector(2*npos, 0);
+		for(int nd=0; nd<npos; ++nd){
+			if(initpos[nd][1]<ybt){
+				u.set(2*nd+0, 0);
+				u.set(2*nd+1, 0);
+				nodeToDF[nd] = NodeProp.DispKnown;
+			}else if(initpos[nd][1]>yup){
+				u.set(2*nd+0, 0);
+				u.set(2*nd+1, disp);
+				nodeToDF[nd] = NodeProp.DispKnown;
+			}else{
+				nodeToDF[nd] = NodeProp.ForceKnown;
+			}
+		}
+		// dlist, flist
+		dlist.clear();
+		flist.clear();
+		for(int i=0; i<npos; ++i){
+			if(nodeToDF[i] == NodeProp.DispKnown){
+				dlist.add(i);
+			}else{
+				flist.add(i);
+			}
+		}
+		// ud, ff
+		ud = factory.createVector(2*dlist.size());
+		ff = factory.createVector(2*flist.size());
+		for(int i=0; i<dlist.size(); ++i){
+			ud.set(2*i+0, u.get(2*dlist.get(i)+0));
+			ud.set(2*i+1, u.get(2*dlist.get(i)+1));
+		}
+		for(int i=0; i<flist.size(); ++i){
+			ff.set(2*i+0, f.get(2*flist.get(i)+0));
+			ff.set(2*i+1, f.get(2*flist.get(i)+1));
+		}
+	}
+	
+	public void calcDeformation(){
+		// divide matrices
+		Kff = factory.createConstantMatrix(flist.size(), flist.size(), 0);
+		for(int i=0; i<flist.size(); ++i){
+			for(int j=0; j<flist.size(); ++j){
+				for(int k=0; k<2; ++k){
+					for(int l=0; l<2; ++l){
+						Kff.set(2*i+k, 2*j+l, K.get(2*flist.get(i)+k, 2*flist.get(j)+l));
+					}
+				}
+			}
+		}
+		Kfd = factory.createConstantMatrix(flist.size(), dlist.size(), 0);
+		for(int i=0; i<flist.size(); ++i){
+			for(int j=0; j<dlist.size(); ++j){
+				for(int k=0; k<2; ++k){
+					for(int l=0; l<2; ++l){
+						Kfd.set(2*i+k, 2*j+l, K.get(2*flist.get(i)+k, 2*dlist.get(j)+l));
+					}
+				}
+			}
+		}
+		Kdd = factory.createConstantMatrix(dlist.size(), dlist.size(), 0);
+		for(int i=0; i<dlist.size(); ++i){
+			for(int j=0; j<dlist.size(); ++j){
+				for(int k=0; k<2; ++k){
+					for(int l=0; l<2; ++l){
+						Kdd.set(2*i+k, 2*j+l, K.get(2*dlist.get(i)+k, 2*dlist.get(j)+l));
+					}
+				}
+			}
+		}
+		// calc deformation
+		// solve linear system
+		// Kff * uf = ff - Kfd * ud
+		// uf: unknown
+		LinearSystemSolver solver = Kff.withSolver(LinearAlgebra.GAUSSIAN);
+		uf = solver.solve(Kfd.multiply(-1.0).multiply(ud).subtract(ff), LinearAlgebra.DENSE_FACTORY);
+		// calc force
+		fd = Kfd.transpose().multiply(uf).add(Kdd.multiply(ud));
+		// update u
+		for(int i=0; i<flist.size(); ++i){
+			u.set(2*flist.get(i)+0, uf.get(2*i+0));
+			u.set(2*flist.get(i)+1, uf.get(2*i+1));
+		}
+		// update f
+		for(int i=0; i<dlist.size(); ++i){
+			f.set(2*dlist.get(i)+0, fd.get(2*i+0));
+			f.set(2*dlist.get(i)+1, fd.get(2*i+1));
+		}
+		// update pos
+		for(int i=0; i<npos; ++i){
+			pos[i][0] = initpos[i][0] + u.get(2*i+0);
+			pos[i][1] = initpos[i][1] + u.get(2*i+1);
+		}
+	}
+	
+	public float[][] getPos(){
+		float[][] tmp = new float[npos][2];
+		for(int i=0; i<npos; ++i){
+			for(int j=0; j<2; ++j){
+				tmp[i][j] = (float)pos[i][j];
+			}
+		}
+		return tmp;
+	}
 }
