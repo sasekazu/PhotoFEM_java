@@ -111,8 +111,19 @@ public class Main extends JFrame {
 	class MyMouseAdapter extends MouseAdapter{
 		@Override
 		public void mouseClicked(MouseEvent e) {
-			outline.add(new Coordinate(e.getX(), e.getY()));
-			wv.repaint();
+			State state = stateManager.getState();
+			// DRAW_OUTLINE
+			if(state == StateManager.State.DRAW_OUTLINE){			
+				outline.add(new Coordinate(e.getX(), e.getY()));
+				wv.repaint();
+			}
+			// GENERATE_MESH
+			else if(state == StateManager.State.GENERATE_MESH){
+			}
+			// CALC_PHYSICS
+			else if(state == StateManager.State.CALC_PHYSICS){
+				
+			}
 			super.mouseClicked(e);
 		}
 		@Override
@@ -124,11 +135,21 @@ public class Main extends JFrame {
 	class MyMouseMotionAdapter extends MouseMotionAdapter{
 		@Override
 		public void mouseDragged(MouseEvent e) {
-			outline.add(new Coordinate(e.getX(), e.getY()));
-			wv.repaint();
+			State state = stateManager.getState();
+			// DRAW_OUTLINE
+			if(state == StateManager.State.DRAW_OUTLINE){			
+				outline.add(new Coordinate(e.getX(), e.getY()));
+				wv.repaint();
+			}
+			// GENERATE_MESH
+			else if(state == StateManager.State.GENERATE_MESH){
+			}
+			// CALC_PHYSICS
+			else if(state == StateManager.State.CALC_PHYSICS){
+				
+			}
 			super.mouseDragged(e);
 		}
-		
 	}
 	
 	class resetActionAdapter implements ActionListener{
